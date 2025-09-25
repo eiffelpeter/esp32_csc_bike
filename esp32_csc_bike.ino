@@ -36,14 +36,15 @@
  * @link Bicycle Odometer and Speedometer <https://create.arduino.cc/projecthub/alan_dewindt/bicycle-odometer-and-speedometer-with-99-lap-period-recorder-331d2b>
  */
 #include <ArduinoBLE.h>
+#include "esp_mac.h"// For esp_read_mac
 
 #define FAKE_DATA 1
 
 #define BRAKE_SIZE 502     // 160 * 3.14 = 502.4 ,  700c * 3.14 = 2198 
 double WHEEL_SIZE = 2100; // Circumference of the wheel, to be defined by the rider
 
-#define DEVICE_NAME_LONG "Arduino CSC Bike Trainer"
-#define DEVICE_NAME_SHORT "peter-CSC"
+//#define DEVICE_NAME_LONG "Arduino CSC Bike Trainer"
+//#define DEVICE_NAME_SHORT "peter-CSC"
 
 unsigned long syncTime;
 
@@ -131,8 +132,14 @@ void setup() {
     }
   }
 
-  BLE.setDeviceName(DEVICE_NAME_LONG);
-  BLE.setLocalName(DEVICE_NAME_SHORT);
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_BT); // Read the Bluetooth MAC address
+
+  char deviceName[30];
+  sprintf(deviceName, "CSC_%02X%02X%02X%02X%02X%02X",mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  BLE.setDeviceName(deviceName);
+  //BLE.setLocalName(DEVICE_NAME_SHORT);
   BLE.setAdvertisedService(cyclingSpeedAndCadenceService);
   cyclingSpeedAndCadenceService.addCharacteristic(cscMeasurementCharacteristic);
   cyclingSpeedAndCadenceService.addCharacteristic(cscFeatureCharacteristic);
