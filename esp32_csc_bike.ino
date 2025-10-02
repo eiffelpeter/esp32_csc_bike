@@ -79,7 +79,7 @@ BLEDevice central;
  */
 #define RED 22     
 #define GREEN 23
-#define BLUE 24     
+#define BLUE 2  // for doit evb
 int ble_connected = LOW;
 const short NOTIFICATION_INTERVAL = 1000;
 long previous_notification = 0;
@@ -87,7 +87,7 @@ long previous_notification = 0;
 /**
  * Speed and Cadence sensors
  */
-#define SPEED   2
+#define SPEED   0
 #define CADENCE 3
 #define SYNC    12
 
@@ -107,9 +107,13 @@ unsigned int instantaneous_cadence = 0;
 long current_millis;
 
 void writeStatus(int red, int green, int blue) {
+#if CONFIG_IDF_TARGET_ESP32S3
+  rgbLedWrite(RGB_BUILTIN, red ? RGB_BRIGHTNESS : 0, green ? RGB_BRIGHTNESS : 0, blue ? RGB_BRIGHTNESS : 0);
+#else
   analogWrite(RED, red ? 512 : 0);
   analogWrite(GREEN, green ? 512 : 0);
   analogWrite(BLUE, blue ? 512 : 0);
+#endif
 }
 
 void setup() {
@@ -120,7 +124,7 @@ void setup() {
   pinMode(BLUE, OUTPUT);
   writeStatus(1, 1, 0);
 
-  pinMode(SYNC, INPUT);
+  pinMode(SYNC, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(SYNC), syncSignal, RISING);
 
   if (!BLE.begin()) { // Error starting the bluetooth module
@@ -156,8 +160,8 @@ void setup() {
   Serial.println("BLE init ok");
 
   // Speed and Cadence handling
-  pinMode(SPEED, INPUT);
-  pinMode(CADENCE, INPUT);
+  pinMode(SPEED, INPUT_PULLUP);
+  pinMode(CADENCE, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(SPEED), speedPulseInterrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(CADENCE), cadencePulseInterrupt, RISING);
 }
@@ -166,6 +170,18 @@ void loop() {
 
 #ifdef FAKE_DATA
   static unsigned long tick;
+  static unsigned long led_tick;
+  static bool toggle;
+
+  // refresh every 1sec
+  if (millis() - led_tick > 1000) {
+    led_tick = millis();
+    if (ble_connected == LOW) {
+      writeStatus(1, 1, toggle ? 0 : 1);
+    }
+
+    toggle = !toggle;
+  }
 
   if (millis() - tick >= fake_duration) {
     tick = millis();
