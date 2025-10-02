@@ -140,10 +140,10 @@ void setup() {
   esp_read_mac(mac, ESP_MAC_BT); // Read the Bluetooth MAC address
 
   char deviceName[30];
-  sprintf(deviceName, "CSC_%02X%02X%02X%02X%02X%02X",mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  sprintf(deviceName, "CSC_%02X%02X%02X", mac[3], mac[4], mac[5]);
 
   BLE.setDeviceName(deviceName);
-  //BLE.setLocalName(DEVICE_NAME_SHORT);
+  BLE.setLocalName(deviceName);   // for advertising
   BLE.setAdvertisedService(cyclingSpeedAndCadenceService);
   cyclingSpeedAndCadenceService.addCharacteristic(cscMeasurementCharacteristic);
   cyclingSpeedAndCadenceService.addCharacteristic(cscFeatureCharacteristic);
